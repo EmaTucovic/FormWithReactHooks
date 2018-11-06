@@ -1,53 +1,75 @@
 import React, { useState, Fragment } from "react";
 
-const useInput = ({
-  fieldName,
-  label,
-  defaultValue,
-  validationRules = [],
-  isVisible = true
-}) => {
-  let [schemaState, setSchemaState] = useState({
-    [fieldName]: { value: defaultValue, isVisible, error: "" }
+// schema { a: { }, }
+const initSchemaState = schema => {
+  let formState = {};
+
+  Object.keys(schema).forEach(fieldName => {
+    formState[fieldName] = {
+      value: schema[fieldName].defaultValue,
+      isVisible: schema[fieldName].isVisible,
+      error: ""
+    };
   });
+  return formState;
+};
+
+const useInput = schema => {
+  let [schemaState, setSchemaState] = useState(() => initSchemaState(schema));
   let formData = {};
 
-  formData[fieldName] = {
-    render: function(additionalPorps = {}) {
-      let { isVisible } = additionalPorps;
+  Object.keys(schema).forEach(key => {
+    let { fieldName, label, validationRules } = schema[key];
 
-      if (
-        isVisible ||
-        (isVisible === undefined && schemaState[fieldName].isVisible)
-      ) {
-        return (
-          <div>
-            <div>{label}</div>
-            <input
-              style={{
-                background: schemaState[fieldName].error ? "red" : "white"
-              }}
-              value={schemaState[fieldName].value}
-              onChange={ev => {
-                let value = ev.currentTarget.value;
-                let error = validateField({
-                  fieldName,
-                  value,
-                  validationRules
-                });
-                setSchemaState({
-                  [fieldName]: { ...schemaState[fieldName], value, error }
-                });
-              }}
-            />
-            {schemaState[fieldName].error && (
-              <div>{schemaState[fieldName].error}</div>
-            )}
-          </div>
-        );
+    formData[fieldName] = {
+      render: function(additionalPorps = {}) {
+        let { isVisible } = additionalPorps;
+        // update isVisible in state
+        if (
+          isVisible !== undefined &&
+          isVisible !== schemaState[fieldName].isVisible
+        ) {
+          setSchemaState({
+            ...schemaState,
+            [fieldName]: { ...schemaState[fieldName], isVisible }
+          });
+        }
+
+        if (
+          isVisible ||
+          (isVisible === undefined && schemaState[fieldName].isVisible)
+        ) {
+          return (
+            <div>
+              <div>{label}</div>
+              <input
+                style={{
+                  background: schemaState[fieldName].error ? "red" : "white"
+                }}
+                value={schemaState[fieldName].value}
+                onChange={ev => {
+                  let value = ev.currentTarget.value;
+                  let error = validateField({
+                    fieldName,
+                    value,
+                    validationRules
+                  });
+                  setSchemaState({
+                    ...schemaState,
+                    [fieldName]: { ...schemaState[fieldName], value, error }
+                  });
+                }}
+              />
+              {schemaState[fieldName].error && (
+                <div>{schemaState[fieldName].error}</div>
+              )}
+            </div>
+          );
+        }
       }
-    }
-  };
+    };
+  });
+
   return formData;
 };
 
