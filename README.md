@@ -1,2 +1,0 @@
-# FormWithReactHooks
-Created with CodeSandbox
